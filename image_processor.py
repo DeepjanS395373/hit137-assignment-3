@@ -15,6 +15,7 @@ from models import (
     BrightnessAlteration,
     BlurAlteration,
     ColorShiftAlteration,
+    ShapeAlteration,
 )
 
 
@@ -35,6 +36,7 @@ class ImageProcessor:
             BrightnessAlteration(),
             BlurAlteration(),
             ColorShiftAlteration(),
+            ShapeAlteration(),
         ]
 
     def load_image(self, file_path):
@@ -87,8 +89,30 @@ class ImageProcessor:
 
             if not self._has_overlap(new_region):
                 alteration = random.choice(self.alterations)
+
+                before_region = self.modified_image[
+                    new_region.y:new_region.y + new_region.height,
+                    new_region.x:new_region.x + new_region.width
+                ].copy()
+
                 alteration.apply(self.modified_image, new_region)
-                self.regions.append(new_region)
+
+                after_region = self.modified_image[
+                    new_region.y:new_region.y + new_region.height,
+                    new_region.x:new_region.x + new_region.width
+                ]
+
+                difference_score = np.mean(
+                    cv2.absdiff(before_region, after_region)
+                )
+
+                if difference_score >= 12:
+                    self.regions.append(new_region)
+                else:
+                    self.modified_image[
+                        new_region.y:new_region.y + new_region.height,
+                        new_region.x:new_region.x + new_region.width
+                    ] = before_region
 
         if len(self.regions) != 5:
             raise ValueError("Could not create five safe non-overlapping differences.")

@@ -7,6 +7,8 @@ for the Spot the Difference game.
 
 from abc import ABC, abstractmethod
 
+import cv2
+
 
 class DifferenceRegion:
     """
@@ -14,16 +16,6 @@ class DifferenceRegion:
     """
 
     def __init__(self, x, y, width, height):
-        """
-        Initialize a difference region.
-
-        Args:
-            x (int): Top-left x-coordinate
-            y (int): Top-left y-coordinate
-            width (int): Region width
-            height (int): Region height
-        """
-
         self.x = x
         self.y = y
         self.width = width
@@ -35,13 +27,6 @@ class DifferenceRegion:
     def contains_point(self, px, py):
         """
         Check if a point is inside the region.
-
-        Args:
-            px (int): X-coordinate of click
-            py (int): Y-coordinate of click
-
-        Returns:
-            bool: True if point is inside region
         """
 
         return (
@@ -52,12 +37,6 @@ class DifferenceRegion:
     def overlaps(self, other_region):
         """
         Check if this region overlaps another region.
-
-        Args:
-            other_region (DifferenceRegion): Another region object
-
-        Returns:
-            bool: True if regions overlap
         """
 
         return not (
@@ -77,20 +56,12 @@ class ImageAlteration(ABC):
 
     @abstractmethod
     def apply(self, image, region):
-        """
-        Apply alteration to the image region.
-
-        Args:
-            image: OpenCV image
-            region (DifferenceRegion): Region to modify
-        """
-
         pass
 
 
 class BrightnessAlteration(ImageAlteration):
     """
-    Alters image brightness inside a region.
+    Makes the selected region clearly brighter.
     """
 
     def apply(self, image, region):
@@ -100,24 +71,22 @@ class BrightnessAlteration(ImageAlteration):
             region.x:region.x + region.width
         ]
 
-        roi[:] = roi.clip(0, 255) * 0.7
+        roi[:] = cv2.convertScaleAbs(roi, alpha=1.0, beta=75)
 
 
 class BlurAlteration(ImageAlteration):
     """
-    Applies blur effect to a region.
+    Applies a strong blur effect to a selected region.
     """
 
     def apply(self, image, region):
-
-        import cv2
 
         roi = image[
             region.y:region.y + region.height,
             region.x:region.x + region.width
         ]
 
-        blurred = cv2.GaussianBlur(roi, (9, 9), 0)
+        blurred = cv2.GaussianBlur(roi, (25, 25), 0)
 
         image[
             region.y:region.y + region.height,
@@ -127,7 +96,7 @@ class BlurAlteration(ImageAlteration):
 
 class ColorShiftAlteration(ImageAlteration):
     """
-    Applies colour shift to a region.
+    Applies a visible colour shift to a selected region.
     """
 
     def apply(self, image, region):
@@ -137,4 +106,32 @@ class ColorShiftAlteration(ImageAlteration):
             region.x:region.x + region.width
         ]
 
-        roi[:, :, 1] = roi[:, :, 1].clip(0, 255) * 0.5
+        shifted = roi.copy()
+        shifted[:, :, 0] = cv2.add(shifted[:, :, 0], 80)
+        shifted[:, :, 1] = cv2.subtract(shifted[:, :, 1], 60)
+
+        image[
+            region.y:region.y + region.height,
+            region.x:region.x + region.width
+        ] = shifted
+
+
+class ShapeAlteration(ImageAlteration):
+    """
+    Adds a small visible shape inside the selected region.
+    This guarantees the difference can be detected by the player.
+    """
+
+    def apply(self, image, region):
+
+        center_x = region.x + region.width // 2
+        center_y = region.y + region.height // 2
+        radius = min(region.width, region.height) // 4
+
+        cv2.circle(
+            image,
+            (center_x, center_y),
+            radius,
+            (0, 255, 255),
+            -1
+        )

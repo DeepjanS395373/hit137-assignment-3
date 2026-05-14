@@ -69,7 +69,7 @@ class GameController:
 
         if original_x < 0 or original_y < 0:
             return False, "Invalid click position.", None
-
+        
         height, width = self.image_processor.original_image.shape[:2]
 
         if original_x >= width or original_y >= height:
@@ -94,6 +94,7 @@ class GameController:
 
                 return True, "Correct difference found.", region
 
+        self.image_processor.draw_wrong_click(original_x, original_y)
         self.mistakes += 1
 
         if self.mistakes >= self.MAX_MISTAKES:

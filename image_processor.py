@@ -210,3 +210,29 @@ class ImageProcessor:
 
         cv2.circle(self.original_image, (center_x, center_y), radius, (255, 0, 0), 3)
         cv2.circle(self.modified_image, (center_x, center_y), radius, (255, 0, 0), 3)
+
+
+    def draw_wrong_click(self, x, y):
+        """
+        Draw an orange X marker on the modified image for an incorrect click.
+        """
+
+        marker_size = 12
+        color = (0, 165, 255)
+        thickness = 3
+
+        cv2.line(
+            self.modified_image,
+            (x - marker_size, y - marker_size),
+            (x + marker_size, y + marker_size),
+            color,
+            thickness
+        )
+
+        cv2.line(
+            self.modified_image,
+            (x + marker_size, y - marker_size),
+            (x - marker_size, y + marker_size),
+            color,
+            thickness
+        )

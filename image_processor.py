@@ -125,7 +125,10 @@ class ImageProcessor:
 
         width_scale = max_width / width
         height_scale = max_height / height
-        self.scale_factor = min(width_scale, height_scale, 1.0)
+        self.scale_factor = min(width_scale, height_scale)
+
+        if self.scale_factor <= 0:
+            self.scale_factor = 1.0
 
         display_width = int(width * self.scale_factor)
         display_height = int(height * self.scale_factor)

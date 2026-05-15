@@ -60,33 +60,22 @@ class ImageAlteration(ABC):
 
 
 class BrightnessAlteration(ImageAlteration):
-    """
-    Makes the selected region clearly brighter.
-    """
-
     def apply(self, image, region):
-
         roi = image[
             region.y:region.y + region.height,
             region.x:region.x + region.width
         ]
-
-        roi[:] = cv2.convertScaleAbs(roi, alpha=1.0, beta=75)
+        roi[:] = cv2.convertScaleAbs(roi, alpha=1.06, beta=16)
 
 
 class BlurAlteration(ImageAlteration):
-    """
-    Applies a strong blur effect to a selected region.
-    """
-
     def apply(self, image, region):
-
         roi = image[
             region.y:region.y + region.height,
             region.x:region.x + region.width
         ]
 
-        blurred = cv2.GaussianBlur(roi, (25, 25), 0)
+        blurred = cv2.GaussianBlur(roi, (13, 13), 0)
 
         image[
             region.y:region.y + region.height,
@@ -96,42 +85,61 @@ class BlurAlteration(ImageAlteration):
 
 class ColorShiftAlteration(ImageAlteration):
     """
-    Applies a visible colour shift to a selected region.
+    Applies a soft blended colour tint using a faded elliptical mask.
     """
 
     def apply(self, image, region):
+
+        import random
+        import numpy as np
 
         roi = image[
             region.y:region.y + region.height,
             region.x:region.x + region.width
         ]
 
-        shifted = roi.copy()
-        shifted[:, :, 0] = cv2.add(shifted[:, :, 0], 80)
-        shifted[:, :, 1] = cv2.subtract(shifted[:, :, 1], 60)
+        overlay = roi.copy()
 
-        image[
-            region.y:region.y + region.height,
-            region.x:region.x + region.width
-        ] = shifted
+        colour_styles = [
+            (170, 120, 220),   # purple
+            (220, 170, 120),   # warm orange
+            (120, 220, 180),   # mint green
+            (200, 160, 255),   # pink
+            (160, 220, 255),   # cyan
+        ]
 
+        tint_colour = random.choice(colour_styles)
 
-class ShapeAlteration(ImageAlteration):
-    """
-    Adds a small visible shape inside the selected region.
-    This guarantees the difference can be detected by the player.
-    """
+        overlay[:] = tint_colour
 
-    def apply(self, image, region):
+        mask = np.zeros((region.height, region.width), dtype=np.uint8)
 
-        center_x = region.x + region.width // 2
-        center_y = region.y + region.height // 2
-        radius = min(region.width, region.height) // 4
+        center = (region.width // 2, region.height // 2)
 
-        cv2.circle(
-            image,
-            (center_x, center_y),
-            radius,
-            (0, 255, 255),
+        axes = (
+            int(region.width * 0.35),
+            int(region.height * 0.35)
+        )
+
+        cv2.ellipse(
+            mask,
+            center,
+            axes,
+            0,
+            0,
+            360,
+            255,
             -1
         )
+
+        mask = cv2.GaussianBlur(mask, (31, 31), 0)
+
+        alpha = mask.astype(float) / 255.0
+        alpha = alpha[:, :, np.newaxis]
+
+        blended = (
+            roi.astype(float) * (1 - alpha)
+            + overlay.astype(float) * alpha * 0.25
+        )
+
+        roi[:] = blended.astype(np.uint8)

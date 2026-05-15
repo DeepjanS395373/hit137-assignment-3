@@ -15,7 +15,6 @@ from models import (
     BrightnessAlteration,
     BlurAlteration,
     ColorShiftAlteration,
-    ShapeAlteration,
 )
 
 
@@ -36,7 +35,6 @@ class ImageProcessor:
             BrightnessAlteration(),
             BlurAlteration(),
             ColorShiftAlteration(),
-            ShapeAlteration(),
         ]
 
     def load_image(self, file_path):
@@ -79,15 +77,15 @@ class ImageProcessor:
         while len(self.regions) < 5 and attempts < max_attempts:
             attempts += 1
 
-            region_width = random.randint(35, 70)
-            region_height = random.randint(35, 70)
+            region_width = random.randint(55, 90)
+            region_height = random.randint(55, 90)
 
             x = random.randint(10, width - region_width - 10)
             y = random.randint(10, height - region_height - 10)
 
             new_region = DifferenceRegion(x, y, region_width, region_height)
 
-            if not self._has_overlap(new_region):
+            if not self._has_overlap(new_region) and self._is_region_bright_enough(new_region):
                 alteration = random.choice(self.alterations)
 
                 before_region = self.modified_image[
@@ -106,7 +104,7 @@ class ImageProcessor:
                     cv2.absdiff(before_region, after_region)
                 )
 
-                if difference_score >= 12:
+                if difference_score >= 14:
                     self.regions.append(new_region)
                 else:
                     self.modified_image[
@@ -116,6 +114,21 @@ class ImageProcessor:
 
         if len(self.regions) != 5:
             raise ValueError("Could not create five safe non-overlapping differences.")
+
+    def _is_region_bright_enough(self, region, minimum_brightness=55):
+        """
+        Check whether a region is bright enough for visible soft alterations.
+        """
+
+        roi = self.original_image[
+            region.y:region.y + region.height,
+            region.x:region.x + region.width
+        ]
+
+        gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        average_brightness = np.mean(gray_roi)
+
+        return average_brightness >= minimum_brightness
 
     def _has_overlap(self, new_region):
         """
@@ -236,3 +249,19 @@ class ImageProcessor:
             color,
             thickness
         )
+
+
+def _is_region_bright_enough(self, region, minimum_brightness=70):
+    """
+    Check whether a region is bright enough for visible soft alterations.
+    """
+
+    roi = self.original_image[
+        region.y:region.y + region.height,
+        region.x:region.x + region.width
+    ]
+
+    gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    average_brightness = np.mean(gray_roi)
+
+    return average_brightness >= minimum_brightness

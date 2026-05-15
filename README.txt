@@ -12,6 +12,20 @@ Group Members:
 Project Description:
 This project is a Python desktop application that creates a Spot the Difference game. The user loads an image, and the program automatically creates a modified copy with five random non-overlapping differences. The player must identify the differences by clicking on the modified image.
 
+Contribution Summary:
+
+- Deepjan Thapaliya:
+  Primary developer responsible for overall software architecture, object-oriented design, GUI implementation, OpenCV image processing, gameplay logic, defensive validation, testing, debugging, GitHub integration, evidence preparation, and final project integration.
+
+- Sehajpreet Singh:
+  Assisted with gameplay testing, feature feedback, and interface evaluation.
+
+- Manjil Sahani Chhetri:
+  Assisted with testing different image inputs and reviewing gameplay behaviour.
+
+- Kavya Sethi:
+  Assisted with documentation review, usability feedback, and verification testing.
+  
 Main Technologies:
 - Python
 - Tkinter for GUI
